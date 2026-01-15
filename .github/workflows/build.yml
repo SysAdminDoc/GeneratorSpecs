@@ -1,0 +1,33 @@
+name: Build macOS App
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller customtkinter reportlab Pillow
+      
+      - name: Build macOS app
+        run: |
+          pyinstaller --onefile --noconsole --name="Maven Generator Specs" Maven_Generator_Specs.py
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Maven-Generator-Specs-macOS
+          path: dist/Maven Generator Specs
