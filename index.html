@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maven Generator Specs</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --bg-card-hover: #334155;
+            --blue: #3b82f6;
+            --blue-dark: #2563eb;
+            --blue-light: #60a5fa;
+            --blue-bg: #1e3a5f;
+            --green: #22c55e;
+            --purple: #a855f7;
+            --purple-dark: #9333ea;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #334155;
+            --border-light: #475569;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .nav {
+            background-color: var(--bg-secondary);
+            padding: 0 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo img {
+            height: 40px;
+        }
+
+        .logo-fallback {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .nav-btn.active {
+            background: var(--blue);
+        }
+
+        /* Main Content */
+        .main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 40px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        /* Header */
+        .page-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .header-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--blue-bg);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .header-text h1 {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        .header-text p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Section Labels */
+        .section-label {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .section-sublabel {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        /* Phase Selection */
+        .phase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .phase-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .phase-card:hover {
+            border-color: var(--border-light);
+        }
+
+        .phase-card.selected {
+            border-color: var(--blue);
+            background: var(--blue-bg);
+        }
+
+        .phase-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .phase-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--blue);
+            border-radius: 50%;
+        }
+
+        .phase-bars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .phase-bar {
+            width: 8px;
+            height: 12px;
+            background: var(--text-muted);
+            border-radius: 2px;
+        }
+
+        .phase-type {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .phase-card h3 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .phase-card p {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        /* Power Selection */
+        .power-grid {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .power-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 15px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        .power-btn:hover {
+            border-color: var(--border-light);
+        }
+
+        .power-btn.selected {
+            border-color: var(--blue);
+            background: var(--blue-bg);
+        }
+
+        .power-btn .value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .power-btn .unit {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Results Section */
+        .results {
+            display: none;
+        }
+
+        .results.visible {
+            display: block;
+        }
+
+        /* Banner */
+        .banner {
+            background: var(--blue);
+            border-radius: 16px;
+            padding: 20px 25px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .banner-badges {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .badge {
+            background: var(--blue-dark);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .banner h2 {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .banner p {
+            color: #e2e8f0;
+            font-size: 13px;
+        }
+
+        .banner-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-purple {
+            background: var(--purple);
+            color: white;
+        }
+
+        .btn-purple:hover {
+            background: var(--purple-dark);
+        }
+
+        .btn-secondary {
+            background: #1e40af;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #1e3a8a;
+        }
+
+        /* Tabs */
+        .tabs {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 4px;
+            display: flex;
+            margin-bottom: 20px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .tab-btn.active {
+            background: var(--blue);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Specs Grid */
+        .specs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .spec-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .spec-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .spec-icon.yellow { background: rgba(234, 179, 8, 0.2); }
+        .spec-icon.blue { background: rgba(59, 130, 246, 0.2); }
+        .spec-icon.green { background: rgba(34, 197, 94, 0.2); }
+        .spec-icon.purple { background: rgba(168, 85, 247, 0.2); }
+        .spec-icon.cyan { background: rgba(6, 182, 212, 0.2); }
+        .spec-icon.pink { background: rgba(236, 72, 153, 0.2); }
+        .spec-icon.orange { background: rgba(249, 115, 22, 0.2); }
+        .spec-icon.emerald { background: rgba(16, 185, 129, 0.2); }
+
+        .spec-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .spec-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .spec-value {
+            font-size: 14px;
+            font-weight: 600;
+            word-break: break-word;
+        }
+
+        /* Notes Card */
+        .notes-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+        }
+
+        .notes-card h4 {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+
+        .notes-card p {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Load Calculator */
+        .load-section {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .load-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .load-header h3 {
+            font-size: 16px;
+        }
+
+        .btn-add {
+            background: var(--green);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-add:hover {
+            background: #16a34a;
+        }
+
+        .load-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .load-table th,
+        .load-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .load-table th {
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .load-table input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .load-table input:focus {
+            outline: none;
+            border-color: var(--blue);
+        }
+
+        .btn-remove {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .load-total {
+            display: flex;
+            justify-content: flex-end;
+            gap: 30px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 2px solid var(--border);
+        }
+
+        .total-item {
+            text-align: right;
+        }
+
+        .total-label {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .total-value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .total-value.green { color: var(--green); }
+
+        /* Diagram */
+        .diagram-container {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .diagram-svg {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            display: block;
+        }
+
+        /* Safety Checklist */
+        .checklist-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .checklist-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .checklist-card h4 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--green);
+        }
+
+        .checklist-item label {
+            font-size: 14px;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .checklist-item input:checked + label {
+            color: var(--text-primary);
+            text-decoration: line-through;
+        }
+
+        /* Report Form */
+        .report-form {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--blue);
+        }
+
+        .btn-generate {
+            background: var(--purple);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-generate:hover {
+            background: var(--purple-dark);
+        }
+
+        /* Support Page */
+        .faq-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 12px;
+        }
+
+        .faq-category {
+            display: inline-block;
+            background: var(--blue-bg);
+            color: var(--blue);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .faq-question {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .faq-answer {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Reports Page */
+        .reports-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .report-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .report-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--green);
+            border-radius: 50%;
+        }
+
+        .report-info {
+            flex: 1;
+        }
+
+        .report-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .report-meta {
+            color: var(--text-secondary);
+            font-size: 13px;
+        }
+
+        .report-date {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .btn-view {
+            background: var(--blue);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .btn-delete {
+            background: #ef4444;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            margin-left: 8px;
+        }
+
+        .empty-state {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 50px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--green);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 1000;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                padding: 0 15px;
+            }
+
+            .main {
+                padding: 20px 15px;
+            }
+
+            .phase-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .banner-buttons {
+                width: 100%;
+            }
+
+            .banner-buttons .btn {
+                flex: 1;
+            }
+
+            .specs-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="logo">
+            <span class="logo-fallback">Maven Imaging</span>
+        </div>
+        <div class="nav-buttons">
+            <button class="nav-btn active" data-page="specs">📋 Specifications</button>
+            <button class="nav-btn" data-page="support">💬 Support</button>
+            <button class="nav-btn" data-page="reports">📄 Reports</button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Specifications Page -->
+        <div id="specs-page" class="page active">
+            <div class="page-header">
+                <div class="header-icon">⚡</div>
+                <div class="header-text">
+                    <h1>X-Ray Medical Imaging Systems</h1>
+                    <p>Electrical specifications for medical imaging equipment</p>
+                </div>
+            </div>
+
+            <!-- Phase Selection -->
+            <div class="section-label">Select Phase Type</div>
+            <div class="section-sublabel">Choose the electrical system for your imaging equipment</div>
+            
+            <div class="phase-grid">
+                <div class="phase-card" data-phase="single">
+                    <div class="phase-indicator">
+                        <div class="phase-dot"></div>
+                        <span class="phase-type">Small Clinic</span>
+                    </div>
+                    <h3>Single Phase</h3>
+                    <p>240V for small imaging systems</p>
+                </div>
+                <div class="phase-card" data-phase="three">
+                    <div class="phase-indicator">
+                        <div class="phase-bars">
+                            <div class="phase-bar"></div>
+                            <div class="phase-bar"></div>
+                            <div class="phase-bar"></div>
+                        </div>
+                        <span class="phase-type">Hospital/Imaging Center</span>
+                    </div>
+                    <h3>Three Phase</h3>
+                    <p>208V/480V for CT, MRI systems</p>
+                </div>
+            </div>
+
+            <!-- Power Selection -->
+            <div class="section-label">Select System Power Rating</div>
+            <div class="section-sublabel">Choose the power requirement in kilowatts</div>
+            
+            <div class="power-grid">
+                <button class="power-btn" data-power="30">
+                    <div class="value">30</div>
+                    <div class="unit">kW</div>
+                </button>
+                <button class="power-btn" data-power="32">
+                    <div class="value">32</div>
+                    <div class="unit">kW</div>
+                </button>
+                <button class="power-btn" data-power="40">
+                    <div class="value">40</div>
+                    <div class="unit">kW</div>
+                </button>
+                <button class="power-btn" data-power="50">
+                    <div class="value">50</div>
+                    <div class="unit">kW</div>
+                </button>
+                <button class="power-btn" data-power="60">
+                    <div class="value">60</div>
+                    <div class="unit">kW</div>
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results" id="results">
+                <div class="banner">
+                    <div class="banner-left">
+                        <div class="banner-badges">
+                            <span class="badge" id="phase-badge">Single Phase</span>
+                            <span class="badge" id="power-badge">30 kW</span>
+                        </div>
+                        <h2>Complete Installation Package</h2>
+                        <p>Includes specs, wiring diagram, load calc & safety checklist</p>
+                    </div>
+                    <div class="banner-buttons">
+                        <button class="btn btn-purple" onclick="generatePDF()">⬇ Generate PDF</button>
+                        <button class="btn btn-secondary" onclick="resetSelection()">↻ Change Selection</button>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="specs-tab">Specs</button>
+                    <button class="tab-btn" data-tab="load-tab">Load Calc</button>
+                    <button class="tab-btn" data-tab="diagram-tab">Diagram</button>
+                    <button class="tab-btn" data-tab="safety-tab">Safety</button>
+                    <button class="tab-btn" data-tab="report-tab">Report</button>
+                </div>
+
+                <!-- Specs Tab -->
+                <div id="specs-tab" class="tab-content active">
+                    <div class="specs-grid" id="specs-grid"></div>
+                    <div class="notes-card" id="notes-card">
+                        <h4>📋 Important Notes</h4>
+                        <p id="specs-notes"></p>
+                    </div>
+                </div>
+
+                <!-- Load Calc Tab -->
+                <div id="load-tab" class="tab-content">
+                    <div class="load-section">
+                        <div class="load-header">
+                            <h3>Equipment Load Calculator</h3>
+                            <button class="btn-add" onclick="addLoad()">+ Add Equipment</button>
+                        </div>
+                        <table class="load-table">
+                            <thead>
+                                <tr>
+                                    <th>Equipment</th>
+                                    <th>Watts</th>
+                                    <th>Qty</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="load-tbody"></tbody>
+                        </table>
+                        <div class="load-total">
+                            <div class="total-item">
+                                <div class="total-label">Total Load</div>
+                                <div class="total-value" id="total-watts">0 W</div>
+                            </div>
+                            <div class="total-item">
+                                <div class="total-label">System Capacity</div>
+                                <div class="total-value green" id="system-capacity">30 kW</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Diagram Tab -->
+                <div id="diagram-tab" class="tab-content">
+                    <div class="diagram-container">
+                        <svg id="wiring-diagram" class="diagram-svg" viewBox="0 0 800 450"></svg>
+                    </div>
+                </div>
+
+                <!-- Safety Tab -->
+                <div id="safety-tab" class="tab-content">
+                    <div class="checklist-grid" id="checklist-grid"></div>
+                </div>
+
+                <!-- Report Tab -->
+                <div id="report-tab" class="tab-content">
+                    <div class="report-form">
+                        <h3 style="margin-bottom: 20px;">Project Information</h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Project Name *</label>
+                                <input type="text" id="project-name" placeholder="Enter project name">
+                            </div>
+                            <div class="form-group">
+                                <label>Project Address</label>
+                                <input type="text" id="project-address" placeholder="Enter address">
+                            </div>
+                            <div class="form-group">
+                                <label>Contractor</label>
+                                <input type="text" id="contractor" placeholder="Contractor name">
+                            </div>
+                            <div class="form-group">
+                                <label>Electrician</label>
+                                <input type="text" id="electrician" placeholder="Electrician name">
+                            </div>
+                        </div>
+                        <button class="btn-generate" onclick="generatePDF()">
+                            📄 Generate PDF Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Support Page -->
+        <div id="support-page" class="page">
+            <div class="page-header">
+                <div class="header-icon">💬</div>
+                <div class="header-text">
+                    <h1>Support Center</h1>
+                    <p>Frequently asked questions and troubleshooting</p>
+                </div>
+            </div>
+            <div id="faq-container"></div>
+        </div>
+
+        <!-- Reports Page -->
+        <div id="reports-page" class="page">
+            <div class="reports-header">
+                <h1>Reports</h1>
+                <button class="btn btn-secondary" onclick="clearReports()">🗑 Clear All</button>
+            </div>
+            <div id="reports-container"></div>
+        </div>
+    </main>
+
+    <script>
+        // =====================================================================
+        // DATA
+        // =====================================================================
+        
+        const SINGLE_PHASE_SPECS = {
+            30: { voltage: "240V", amperage: "125A", wire_gauge: "1/0 AWG Copper", conduit_size: '1.5" (1-1/2 inch)', breaker_size: "150A", ground_wire: "6 AWG Copper", neutral_wire: "1/0 AWG", receptacle: "Hardwired dedicated circuit", notes: "Requires isolated ground. Dedicated circuit mandatory per NFPA 99. Must be on emergency power system per healthcare facility code." },
+            32: { voltage: "240V", amperage: "133A", wire_gauge: "1/0 AWG Copper", conduit_size: '1.5" (1-1/2 inch)', breaker_size: "150A", ground_wire: "6 AWG Copper", neutral_wire: "1/0 AWG", receptacle: "Hardwired dedicated circuit", notes: "Isolated ground required. Room requires RF shielding. Emergency power backup mandatory." },
+            40: { voltage: "240V", amperage: "167A", wire_gauge: "2/0 AWG Copper", conduit_size: '2" (2 inch)', breaker_size: "200A", ground_wire: "4 AWG Copper", neutral_wire: "2/0 AWG", receptacle: "Hardwired dedicated circuit", notes: "High-power imaging. Requires 200A+ service. Isolated ground and RF shielding mandatory." },
+            50: { voltage: "240V", amperage: "208A", wire_gauge: "4/0 AWG Copper", conduit_size: '2.5" (2-1/2 inch)', breaker_size: "250A", ground_wire: "4 AWG Copper", neutral_wire: "4/0 AWG", receptacle: "Hardwired dedicated circuit", notes: "CT/MRI class system. Requires dedicated transformer. Harmonic filtering recommended." },
+            60: { voltage: "240V", amperage: "250A", wire_gauge: "250 MCM Copper", conduit_size: '3" (3 inch)', breaker_size: "300A", ground_wire: "2 AWG Copper", neutral_wire: "250 MCM", receptacle: "Hardwired dedicated circuit", notes: "High-field MRI or advanced CT. Requires dedicated service entrance. Power quality monitoring essential." }
+        };
+
+        const THREE_PHASE_SPECS = {
+            30: { voltage: "208V/480V", amperage: "83A @ 208V / 36A @ 480V", wire_gauge: "4 AWG Copper (208V) / 8 AWG Copper (480V)", conduit_size: '1.25" (1-1/4 inch)', breaker_size: "100A (208V) / 50A (480V)", ground_wire: "8 AWG Copper", neutral_wire: "4 AWG (if required)", receptacle: "Hardwired 4-wire connection", notes: "Three-phase medical imaging. Isolated ground required. Phase balance critical for image quality." },
+            32: { voltage: "208V/480V", amperage: "89A @ 208V / 39A @ 480V", wire_gauge: "3 AWG Copper (208V) / 8 AWG Copper (480V)", conduit_size: '1.25" (1-1/4 inch)', breaker_size: "100A (208V) / 50A (480V)", ground_wire: "8 AWG Copper", neutral_wire: "3 AWG (if required)", receptacle: "Hardwired 4-wire connection", notes: "Advanced imaging equipment. Voltage regulation ±5% required. RF shielding mandatory." },
+            40: { voltage: "208V/480V", amperage: "111A @ 208V / 48A @ 480V", wire_gauge: "1 AWG Copper (208V) / 6 AWG Copper (480V)", conduit_size: '1.5" (1-1/2 inch)', breaker_size: "125A (208V) / 60A (480V)", ground_wire: "6 AWG Copper", neutral_wire: "1 AWG (if required)", receptacle: "Hardwired 4-wire connection", notes: "CT scanner class equipment. Power quality monitoring required. THD must be <5%." },
+            50: { voltage: "208V/480V", amperage: "139A @ 208V / 60A @ 480V", wire_gauge: "1/0 AWG Copper (208V) / 4 AWG Copper (480V)", conduit_size: '2" (2 inch)', breaker_size: "175A (208V) / 80A (480V)", ground_wire: "6 AWG Copper", neutral_wire: "1/0 AWG (if required)", receptacle: "Hardwired 4-wire connection", notes: "High-power CT/MRI system. Dedicated transformer recommended. Active harmonic filter may be required." },
+            60: { voltage: "208V/480V", amperage: "167A @ 208V / 72A @ 480V", wire_gauge: "2/0 AWG Copper (208V) / 3 AWG Copper (480V)", conduit_size: '2" (2 inch)', breaker_size: "200A (208V) / 100A (480V)", ground_wire: "4 AWG Copper", neutral_wire: "2/0 AWG (if required)", receptacle: "Hardwired 4-wire connection", notes: "Premium imaging suite. Dedicated electrical room required. K-rated transformer mandatory." }
+        };
+
+        const SAFETY_CHECKLIST = {
+            "Pre-Installation": ["Verify all permits obtained", "Review local codes", "Confirm specs with manufacturer", "Schedule inspections"],
+            "Electrical System": ["Dedicated circuit installed", "Proper wire gauge verified", "Breaker size matches specs", "Connections properly torqued"],
+            "Grounding": ["Ground rod depth (8ft min)", "Ground resistance (<1Ω)", "Isolated ground installed", "No ground loops"],
+            "Power Quality": ["Voltage within ±5%", "THD within limits (<5%)", "Power quality monitor installed"]
+        };
+
+        const FAQ_DATABASE = [
+            { category: "Electrical", question: "What is isolated ground?", answer: "Isolated ground is a dedicated grounding conductor that runs separately from equipment ground back to service entrance. Required by NFPA 99 for medical imaging." },
+            { category: "Electrical", question: "Why three-phase power?", answer: "High-power medical imaging (>40kW) requires three-phase for efficient power delivery, reduced harmonics, and better voltage stability." },
+            { category: "Installation", question: "Ground rod depth?", answer: "At least 8 feet deep, <1 ohm resistance. Multiple rods may be required, spaced 6+ feet apart." },
+            { category: "Safety", question: "RF shielding requirements?", answer: "Required for all MRI systems (>100dB attenuation). Not typically required for standard X-ray or ultrasound." }
+        ];
+
+        // =====================================================================
+        // STATE
+        // =====================================================================
+
+        let selectedPhase = null;
+        let selectedPower = null;
+        let currentSpecs = null;
+        let loads = [
+            { id: 1, name: "X-Ray Tube", watts: 15000, quantity: 1 },
+            { id: 2, name: "Image Processor", watts: 3000, quantity: 1 },
+            { id: 3, name: "Room HVAC", watts: 2000, quantity: 1 }
+        ];
+        let loadId = 4;
+
+        // =====================================================================
+        // NAVIGATION
+        // =====================================================================
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(btn.dataset.page + '-page').classList.add('active');
+                
+                if (btn.dataset.page === 'reports') refreshReports();
+            });
+        });
+
+        // =====================================================================
+        // PHASE & POWER SELECTION
+        // =====================================================================
+
+        document.querySelectorAll('.phase-card').forEach(card => {
+            card.addEventListener('click', () => {
+                document.querySelectorAll('.phase-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                selectedPhase = card.dataset.phase;
+                updateSpecs();
+            });
+        });
+
+        document.querySelectorAll('.power-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.power-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedPower = parseInt(btn.dataset.power);
+                updateSpecs();
+            });
+        });
+
+        function updateSpecs() {
+            if (!selectedPhase || !selectedPower) return;
+
+            currentSpecs = selectedPhase === 'single' 
+                ? SINGLE_PHASE_SPECS[selectedPower] 
+                : THREE_PHASE_SPECS[selectedPower];
+
+            document.getElementById('phase-badge').textContent = 
+                selectedPhase === 'single' ? 'Single Phase' : 'Three Phase';
+            document.getElementById('power-badge').textContent = selectedPower + ' kW';
+            document.getElementById('system-capacity').textContent = selectedPower + ' kW';
+
+            document.getElementById('results').classList.add('visible');
+            renderSpecs();
+            renderLoads();
+            renderDiagram();
+            renderChecklist();
+        }
+
+        function resetSelection() {
+            selectedPhase = null;
+            selectedPower = null;
+            currentSpecs = null;
+            document.querySelectorAll('.phase-card').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('.power-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById('results').classList.remove('visible');
+        }
+
+        // =====================================================================
+        // TABS
+        // =====================================================================
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+                document.getElementById(btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // =====================================================================
+        // SPECS RENDERING
+        // =====================================================================
+
+        function renderSpecs() {
+            const specs = [
+                { icon: '⚡', color: 'yellow', label: 'Voltage', key: 'voltage' },
+                { icon: '🔌', color: 'blue', label: 'Amperage', key: 'amperage' },
+                { icon: '🔗', color: 'green', label: 'Wire Gauge (Hot)', key: 'wire_gauge' },
+                { icon: '➖', color: 'purple', label: 'Neutral Wire', key: 'neutral_wire' },
+                { icon: '⏚', color: 'cyan', label: 'Ground Wire', key: 'ground_wire' },
+                { icon: '🔘', color: 'pink', label: 'Conduit Size', key: 'conduit_size' },
+                { icon: '🔲', color: 'orange', label: 'Breaker Size', key: 'breaker_size' },
+                { icon: '🔧', color: 'emerald', label: 'Connection', key: 'receptacle' }
+            ];
+
+            const grid = document.getElementById('specs-grid');
+            grid.innerHTML = specs.map(s => `
+                <div class="spec-card">
+                    <div class="spec-icon ${s.color}">${s.icon}</div>
+                    <div class="spec-info">
+                        <div class="spec-label">${s.label}</div>
+                        <div class="spec-value">${currentSpecs[s.key]}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('specs-notes').textContent = currentSpecs.notes;
+        }
+
+        // =====================================================================
+        // LOAD CALCULATOR
+        // =====================================================================
+
+        function renderLoads() {
+            const tbody = document.getElementById('load-tbody');
+            tbody.innerHTML = loads.map(load => `
+                <tr>
+                    <td><input type="text" value="${load.name}" onchange="updateLoad(${load.id}, 'name', this.value)"></td>
+                    <td><input type="number" value="${load.watts}" onchange="updateLoad(${load.id}, 'watts', this.value)"></td>
+                    <td><input type="number" value="${load.quantity}" min="1" onchange="updateLoad(${load.id}, 'quantity', this.value)"></td>
+                    <td>${(load.watts * load.quantity).toLocaleString()} W</td>
+                    <td><button class="btn-remove" onclick="removeLoad(${load.id})">✕</button></td>
+                </tr>
+            `).join('');
+
+            const total = loads.reduce((sum, l) => sum + (l.watts * l.quantity), 0);
+            document.getElementById('total-watts').textContent = total.toLocaleString() + ' W';
+        }
+
+        function addLoad() {
+            loads.push({ id: loadId++, name: "New Equipment", watts: 1000, quantity: 1 });
+            renderLoads();
+        }
+
+        function removeLoad(id) {
+            loads = loads.filter(l => l.id !== id);
+            renderLoads();
+        }
+
+        function updateLoad(id, field, value) {
+            const load = loads.find(l => l.id === id);
+            if (load) {
+                load[field] = field === 'name' ? value : parseInt(value) || 0;
+                renderLoads();
+            }
+        }
+
+        // =====================================================================
+        // WIRING DIAGRAM
+        // =====================================================================
+
+        function renderDiagram() {
+            const svg = document.getElementById('wiring-diagram');
+            const phase = selectedPhase === 'single' ? 'SINGLE' : 'THREE';
+            
+            svg.innerHTML = `
+                <rect width="800" height="450" fill="#1e293b" rx="12"/>
+                <text x="400" y="30" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="bold">
+                    ${phase} PHASE - ${selectedPower} kW WIRING DIAGRAM
+                </text>
+                
+                <!-- Power Source -->
+                <rect x="50" y="80" width="120" height="100" fill="#334155" stroke="#64748b" stroke-width="2" rx="8"/>
+                <text x="110" y="120" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">POWER</text>
+                <text x="110" y="140" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">SOURCE</text>
+                <text x="110" y="165" text-anchor="middle" fill="#94a3b8" font-size="11">${currentSpecs.voltage}</text>
+                
+                <!-- Main Breaker -->
+                <rect x="230" y="80" width="120" height="100" fill="#334155" stroke="#a855f7" stroke-width="2" rx="8"/>
+                <text x="290" y="120" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">MAIN</text>
+                <text x="290" y="140" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">BREAKER</text>
+                <text x="290" y="165" text-anchor="middle" fill="#a855f7" font-size="11">${currentSpecs.breaker_size}</text>
+                
+                <!-- Disconnect -->
+                <rect x="410" y="80" width="120" height="100" fill="#334155" stroke="#eab308" stroke-width="2" rx="8"/>
+                <text x="470" y="120" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">DISCONNECT</text>
+                <text x="470" y="145" text-anchor="middle" fill="#eab308" font-size="11">Fused</text>
+                
+                <!-- Equipment -->
+                <rect x="410" y="250" width="120" height="120" fill="#334155" stroke="#3b82f6" stroke-width="2" rx="8"/>
+                <text x="470" y="295" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">IMAGING</text>
+                <text x="470" y="315" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">EQUIPMENT</text>
+                <text x="470" y="345" text-anchor="middle" fill="#3b82f6" font-size="11">${selectedPower} kW</text>
+                
+                <!-- Ground Rod -->
+                <rect x="230" y="270" width="120" height="100" fill="#334155" stroke="#22c55e" stroke-width="2" rx="8"/>
+                <text x="290" y="310" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">GROUND</text>
+                <text x="290" y="330" text-anchor="middle" fill="#f8fafc" font-size="12" font-weight="bold">ROD</text>
+                <text x="290" y="355" text-anchor="middle" fill="#22c55e" font-size="11">&lt;1Ω</text>
+                
+                <!-- Wiring Lines -->
+                <line x1="170" y1="130" x2="230" y2="130" stroke="#ef4444" stroke-width="3"/>
+                <line x1="350" y1="130" x2="410" y2="130" stroke="#ef4444" stroke-width="3"/>
+                <line x1="470" y1="180" x2="470" y2="250" stroke="#ef4444" stroke-width="3"/>
+                <line x1="350" y1="320" x2="410" y2="320" stroke="#22c55e" stroke-width="3"/>
+                
+                <!-- Wire Labels -->
+                <text x="600" y="100" fill="#ef4444" font-size="11">● Hot: ${currentSpecs.wire_gauge}</text>
+                <text x="600" y="125" fill="#0ea5e9" font-size="11">● Neutral: ${currentSpecs.neutral_wire}</text>
+                <text x="600" y="150" fill="#22c55e" font-size="11">● Ground: ${currentSpecs.ground_wire}</text>
+                <text x="600" y="175" fill="#94a3b8" font-size="11">● Conduit: ${currentSpecs.conduit_size}</text>
+            `;
+        }
+
+        // =====================================================================
+        // SAFETY CHECKLIST
+        // =====================================================================
+
+        function renderChecklist() {
+            const grid = document.getElementById('checklist-grid');
+            const icons = { "Pre-Installation": "📋", "Electrical System": "⚡", "Grounding": "⏚", "Power Quality": "📊" };
+            
+            grid.innerHTML = Object.entries(SAFETY_CHECKLIST).map(([category, items]) => `
+                <div class="checklist-card">
+                    <h4>${icons[category] || '✓'} ${category}</h4>
+                    ${items.map((item, i) => `
+                        <div class="checklist-item">
+                            <input type="checkbox" id="check-${category}-${i}">
+                            <label for="check-${category}-${i}">${item}</label>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        // =====================================================================
+        // FAQ
+        // =====================================================================
+
+        function renderFAQ() {
+            document.getElementById('faq-container').innerHTML = FAQ_DATABASE.map(faq => `
+                <div class="faq-card">
+                    <div class="faq-category">${faq.category}</div>
+                    <div class="faq-question">${faq.question}</div>
+                    <div class="faq-answer">${faq.answer}</div>
+                </div>
+            `).join('');
+        }
+
+        // =====================================================================
+        // REPORTS
+        // =====================================================================
+
+        function getReports() {
+            return JSON.parse(localStorage.getItem('maven_reports') || '[]');
+        }
+
+        function saveReport(report) {
+            const reports = getReports();
+            reports.unshift(report);
+            localStorage.setItem('maven_reports', JSON.stringify(reports.slice(0, 50)));
+        }
+
+        function refreshReports() {
+            const container = document.getElementById('reports-container');
+            const reports = getReports();
+            
+            if (reports.length === 0) {
+                container.innerHTML = '<div class="empty-state">No reports yet</div>';
+                return;
+            }
+
+            container.innerHTML = reports.map((r, i) => `
+                <div class="report-card">
+                    <div class="report-dot"></div>
+                    <div class="report-info">
+                        <div class="report-name">${r.projectName || 'Untitled'}</div>
+                        <div class="report-meta">${r.phaseType === 'single' ? 'Single Phase' : 'Three Phase'} • ${r.power} kW</div>
+                    </div>
+                    <div class="report-date">${new Date(r.date).toLocaleDateString()}</div>
+                    <button class="btn-delete" onclick="deleteReport(${i})">🗑</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteReport(index) {
+            const reports = getReports();
+            reports.splice(index, 1);
+            localStorage.setItem('maven_reports', JSON.stringify(reports));
+            refreshReports();
+        }
+
+        function clearReports() {
+            if (confirm('Delete all reports?')) {
+                localStorage.removeItem('maven_reports');
+                refreshReports();
+            }
+        }
+
+        // =====================================================================
+        // PDF GENERATION
+        // =====================================================================
+
+        function generatePDF() {
+            if (!currentSpecs) {
+                showToast('Please select phase and power first');
+                return;
+            }
+
+            const projectName = document.getElementById('project-name').value || 'Untitled Project';
+            const projectAddress = document.getElementById('project-address').value || '';
+            const contractor = document.getElementById('contractor').value || '';
+            const electrician = document.getElementById('electrician').value || '';
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Header
+            doc.setFillColor(30, 64, 175);
+            doc.rect(0, 0, 210, 35, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.text('MAVEN IMAGING', 105, 12, { align: 'center' });
+            doc.setFontSize(18);
+            doc.text('X-Ray Medical Imaging System Specifications', 105, 24, { align: 'center' });
+
+            // Config badge
+            doc.setFillColor(241, 245, 249);
+            doc.rect(15, 42, 180, 12, 'F');
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(11);
+            const phaseText = selectedPhase === 'single' ? 'Single Phase' : 'Three Phase';
+            doc.text(`Configuration: ${phaseText} • ${selectedPower} kW`, 20, 50);
+
+            // Project Info
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(12);
+            doc.text('PROJECT INFORMATION', 15, 68);
+            doc.setDrawColor(200, 200, 200);
+            doc.line(15, 71, 195, 71);
+
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(10);
+            const info = [
+                ['Project:', projectName],
+                ['Address:', projectAddress || 'N/A'],
+                ['Contractor:', contractor || 'N/A'],
+                ['Electrician:', electrician || 'N/A'],
+                ['Date:', new Date().toLocaleDateString()]
+            ];
+            let y = 78;
+            info.forEach(([label, value]) => {
+                doc.setFont(undefined, 'bold');
+                doc.text(label, 15, y);
+                doc.setFont(undefined, 'normal');
+                doc.text(value, 45, y);
+                y += 7;
+            });
+
+            // Specs Table
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(12);
+            doc.text('ELECTRICAL SPECIFICATIONS', 15, y + 10);
+            doc.line(15, y + 13, 195, y + 13);
+
+            y += 20;
+            doc.setFontSize(10);
+            const specs = [
+                ['Voltage', currentSpecs.voltage],
+                ['Amperage', currentSpecs.amperage],
+                ['Wire Gauge (Hot)', currentSpecs.wire_gauge],
+                ['Neutral Wire', currentSpecs.neutral_wire],
+                ['Ground Wire', currentSpecs.ground_wire],
+                ['Conduit Size', currentSpecs.conduit_size],
+                ['Breaker Size', currentSpecs.breaker_size],
+                ['Connection', currentSpecs.receptacle]
+            ];
+
+            specs.forEach(([param, value], i) => {
+                if (i % 2 === 0) {
+                    doc.setFillColor(248, 250, 252);
+                    doc.rect(15, y - 4, 180, 8, 'F');
+                }
+                doc.setTextColor(0, 0, 0);
+                doc.setFont(undefined, 'bold');
+                doc.text(param, 17, y);
+                doc.setFont(undefined, 'normal');
+                doc.text(value.substring(0, 60), 70, y);
+                y += 8;
+            });
+
+            // Notes
+            y += 5;
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(12);
+            doc.text('IMPORTANT NOTES', 15, y);
+            doc.line(15, y + 3, 195, y + 3);
+            
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(9);
+            const splitNotes = doc.splitTextToSize(currentSpecs.notes, 175);
+            doc.text(splitNotes, 15, y + 10);
+
+            // Footer
+            doc.setFontSize(8);
+            doc.setTextColor(128, 128, 128);
+            doc.text(`Generated by Maven Generator Specs • ${new Date().toLocaleString()}`, 105, 285, { align: 'center' });
+
+            // Save
+            doc.save(`${projectName.replace(/[^a-z0-9]/gi, '_')}_${phaseText}_${selectedPower}kW.pdf`);
+
+            // Save to reports
+            saveReport({
+                projectName,
+                phaseType: selectedPhase,
+                power: selectedPower,
+                date: new Date().toISOString()
+            });
+
+            showToast('PDF generated successfully!');
+        }
+
+        // =====================================================================
+        // TOAST
+        // =====================================================================
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // =====================================================================
+        // INIT
+        // =====================================================================
+
+        renderFAQ();
+    </script>
+</body>
+</html>
