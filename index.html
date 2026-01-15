@@ -1389,6 +1389,7 @@
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            const phaseText = selectedPhase === 'single' ? 'Single Phase' : 'Three Phase';
 
             // Header
             doc.setFillColor(30, 64, 175);
@@ -1404,7 +1405,6 @@
             doc.rect(15, 42, 180, 12, 'F');
             doc.setTextColor(30, 64, 175);
             doc.setFontSize(11);
-            const phaseText = selectedPhase === 'single' ? 'Single Phase' : 'Three Phase';
             doc.text(`Configuration: ${phaseText} • ${selectedPower} kW`, 20, 50);
 
             // Project Info
@@ -1476,10 +1476,166 @@
             const splitNotes = doc.splitTextToSize(currentSpecs.notes, 175);
             doc.text(splitNotes, 15, y + 10);
 
+            // ============= PAGE 2: WIRING DIAGRAM =============
+            doc.addPage();
+
+            // Header for page 2
+            doc.setFillColor(30, 64, 175);
+            doc.rect(0, 0, 210, 25, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(14);
+            doc.text('WIRING DIAGRAM', 105, 16, { align: 'center' });
+
+            // Diagram title
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(12);
+            doc.text(`${phaseText.toUpperCase()} - ${selectedPower} kW`, 105, 38, { align: 'center' });
+
+            // Diagram background
+            doc.setFillColor(248, 250, 252);
+            doc.rect(15, 45, 180, 120, 'F');
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(15, 45, 180, 120, 'S');
+
+            // Scale factors for PDF (800x450 SVG -> 180x120 PDF area)
+            const sx = 180 / 800;
+            const sy = 120 / 450;
+            const ox = 15; // offset x
+            const oy = 45; // offset y
+
+            // Helper to draw boxes
+            function drawBox(x, y, w, h, label1, label2, value, borderColor) {
+                const px = ox + x * sx;
+                const py = oy + y * sy;
+                const pw = w * sx;
+                const ph = h * sy;
+                
+                doc.setFillColor(255, 255, 255);
+                doc.setDrawColor(...borderColor);
+                doc.setLineWidth(0.5);
+                doc.rect(px, py, pw, ph, 'FD');
+                
+                doc.setTextColor(50, 50, 50);
+                doc.setFontSize(7);
+                doc.setFont(undefined, 'bold');
+                doc.text(label1, px + pw/2, py + ph/2 - 3, { align: 'center' });
+                if (label2) {
+                    doc.text(label2, px + pw/2, py + ph/2 + 1, { align: 'center' });
+                }
+                doc.setTextColor(...borderColor);
+                doc.setFontSize(6);
+                doc.setFont(undefined, 'normal');
+                doc.text(value, px + pw/2, py + ph/2 + 6, { align: 'center' });
+            }
+
+            // Draw boxes
+            drawBox(50, 80, 120, 100, 'POWER', 'SOURCE', currentSpecs.voltage, [100, 116, 139]);
+            drawBox(230, 80, 120, 100, 'MAIN', 'BREAKER', currentSpecs.breaker_size, [168, 85, 247]);
+            drawBox(410, 80, 120, 100, 'DISCONNECT', '', 'Fused', [234, 179, 8]);
+            drawBox(410, 250, 120, 120, 'IMAGING', 'EQUIPMENT', selectedPower + ' kW', [59, 130, 246]);
+            drawBox(230, 270, 120, 100, 'GROUND', 'ROD', '<1Ω', [34, 197, 94]);
+
+            // Draw wiring lines
+            doc.setDrawColor(239, 68, 68); // Red for hot
+            doc.setLineWidth(0.8);
+            // Power to Breaker
+            doc.line(ox + 170*sx, oy + 130*sy, ox + 230*sx, oy + 130*sy);
+            // Breaker to Disconnect
+            doc.line(ox + 350*sx, oy + 130*sy, ox + 410*sx, oy + 130*sy);
+            // Disconnect to Equipment
+            doc.line(ox + 470*sx, oy + 180*sy, ox + 470*sx, oy + 250*sy);
+            
+            // Ground line (green)
+            doc.setDrawColor(34, 197, 94);
+            doc.line(ox + 350*sx, oy + 320*sy, ox + 410*sx, oy + 320*sy);
+
+            // Wire Legend
+            const legendY = 175;
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'bold');
+            doc.setTextColor(30, 64, 175);
+            doc.text('WIRE SPECIFICATIONS', 15, legendY);
+            doc.line(15, legendY + 2, 195, legendY + 2);
+
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            
+            // Legend items
+            const legendItems = [
+                { color: [239, 68, 68], label: 'Hot Conductors:', value: currentSpecs.wire_gauge },
+                { color: [14, 165, 233], label: 'Neutral:', value: currentSpecs.neutral_wire },
+                { color: [34, 197, 94], label: 'Ground:', value: currentSpecs.ground_wire },
+                { color: [148, 163, 184], label: 'Conduit:', value: currentSpecs.conduit_size }
+            ];
+
+            let legendX = 20;
+            let legendYPos = legendY + 12;
+            
+            legendItems.forEach((item, i) => {
+                // Color dot
+                doc.setFillColor(...item.color);
+                doc.circle(legendX, legendYPos + i * 10 - 1, 2, 'F');
+                
+                // Label
+                doc.setTextColor(80, 80, 80);
+                doc.setFont(undefined, 'bold');
+                doc.text(item.label, legendX + 5, legendYPos + i * 10);
+                
+                // Value
+                doc.setFont(undefined, 'normal');
+                doc.text(item.value, legendX + 35, legendYPos + i * 10);
+            });
+
+            // Connection details box
+            doc.setFillColor(241, 245, 249);
+            doc.rect(110, legendY + 5, 85, 45, 'F');
+            doc.setDrawColor(200, 200, 200);
+            doc.rect(110, legendY + 5, 85, 45, 'S');
+            
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'bold');
+            doc.text('CONNECTION TYPE', 115, legendY + 13);
+            doc.setTextColor(50, 50, 50);
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            const connLines = doc.splitTextToSize(currentSpecs.receptacle, 75);
+            doc.text(connLines, 115, legendY + 22);
+
+            // Safety notes
+            doc.setTextColor(30, 64, 175);
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'bold');
+            doc.text('INSTALLATION NOTES', 15, 235);
+            doc.line(15, 237, 195, 237);
+            
+            doc.setTextColor(80, 80, 80);
+            doc.setFontSize(8);
+            doc.setFont(undefined, 'normal');
+            const notesText = [
+                '• All wiring must comply with NEC and local codes',
+                '• Isolated ground required per NFPA 99 for medical imaging',
+                '• Verify voltage and phase before energizing',
+                '• Ground resistance must be less than 1 ohm',
+                '• Use copper conductors only - aluminum not permitted',
+                '• All connections must be properly torqued per manufacturer specs'
+            ];
+            notesText.forEach((note, i) => {
+                doc.text(note, 17, 245 + i * 6);
+            });
+
             // Footer
             doc.setFontSize(8);
             doc.setTextColor(128, 128, 128);
             doc.text(`Generated by Maven Generator Specs • ${new Date().toLocaleString()}`, 105, 285, { align: 'center' });
+            doc.text('Page 2 of 2', 195, 285, { align: 'right' });
+
+            // Add page number to page 1
+            doc.setPage(1);
+            doc.setFontSize(8);
+            doc.setTextColor(128, 128, 128);
+            doc.text(`Generated by Maven Generator Specs • ${new Date().toLocaleString()}`, 105, 285, { align: 'center' });
+            doc.text('Page 1 of 2', 195, 285, { align: 'right' });
 
             // Save
             doc.save(`${projectName.replace(/[^a-z0-9]/gi, '_')}_${phaseText}_${selectedPower}kW.pdf`);
